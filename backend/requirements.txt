@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+requests
+beautifulsoup4
+lxml
+sqlalchemy
+psycopg2-binary
+python-dotenv
+langchain
+langchain-groq

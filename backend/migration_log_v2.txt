@@ -1,0 +1,8 @@
+last_score: (psycopg2.errors.DuplicateColumn) column "last_score" of relation "quizzes" already exists
+
+[SQL: ALTER TABLE quizzes ADD COLUMN last_score INTEGER DEFAULT 0]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+high_score: (psycopg2.errors.DuplicateColumn) column "high_score" of relation "quizzes" already exists
+
+[SQL: ALTER TABLE quizzes ADD COLUMN high_score INTEGER DEFAULT 0]
+(Background on this error at: https://sqlalche.me/e/20/f405)

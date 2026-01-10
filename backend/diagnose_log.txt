@@ -1,0 +1,7 @@
+Starting diagnosis...
+Python executable: C:\Users\Monika Reddy\ai-wiki-quiz-generator\backend\venv\Scripts\python.exe
+Imported sqlalchemy
+Imported dotenv
+Imported database module
+Imported models
+Diagnosis complete.

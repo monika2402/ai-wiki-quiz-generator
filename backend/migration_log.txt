@@ -1,0 +1,5 @@
+Connecting to DB...
+Connected.
+Added last_score column.
+Added high_score column.
+Migration committed.
