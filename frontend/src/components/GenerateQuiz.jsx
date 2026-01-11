@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import "./GenerateQuiz.css";
 
+const API_BASE_URL = window.location.hostname === "localhost"
+    ? "http://127.0.0.1:8000"
+    : "https://ai-wiki-quiz-generator-so6x.onrender.com";
+
 function GenerateQuiz({ initialData, onReset }) {
     const [url, setUrl] = useState("");
     const [loading, setLoading] = useState(false);
@@ -56,7 +60,7 @@ function GenerateQuiz({ initialData, onReset }) {
 
         try {
             const res = await fetch(
-                `https://ai-wiki-quiz-generator-so6x.onrender.com/generate-quiz?url=${encodeURIComponent(url)}`,
+                `${API_BASE_URL}/generate-quiz?url=${encodeURIComponent(url)}`,
                 { method: "POST" }
             );
             const data = await res.json();
@@ -82,7 +86,7 @@ function GenerateQuiz({ initialData, onReset }) {
     const saveScore = async (finalScore) => {
         if (!result || !result.id) return;
         try {
-            await fetch(`https://ai-wiki-quiz-generator-so6x.onrender.com/quizzes/${result.id}/score`, {
+            await fetch(`${API_BASE_URL}/quizzes/${result.id}/score`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ score: finalScore })
