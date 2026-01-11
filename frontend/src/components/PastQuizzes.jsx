@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import "./PastQuizzes.css";
 
+const API_BASE_URL = window.location.hostname === "localhost"
+    ? "http://127.0.0.1:8000"
+    : "https://ai-wiki-quiz-generator-so6x.onrender.com";
+
 function PastQuizzes({ onRetake }) {
     const [quizzes, setQuizzes] = useState([]);
     const [selected, setSelected] = useState(null);
@@ -8,7 +12,7 @@ function PastQuizzes({ onRetake }) {
 
     useEffect(() => {
         setLoading(true);
-        fetch("https://ai-wiki-quiz-generator-so6x.onrender.com/quizzes")
+        fetch(`${API_BASE_URL}/quizzes`)
             .then((res) => res.json())
             .then((data) => {
                 setQuizzes(data);
@@ -20,14 +24,14 @@ function PastQuizzes({ onRetake }) {
     }, []);
 
     const openDetails = async (id) => {
-        const res = await fetch(`https://ai-wiki-quiz-generator-so6x.onrender.com/quizzes/${id}`);
+        const res = await fetch(`${API_BASE_URL}/quizzes/${id}`);
         const data = await res.json();
         setSelected(data);
     };
 
     const handleRetake = async (id) => {
         // Fetch the full quiz details to retake
-        const res = await fetch(`https://ai-wiki-quiz-generator-so6x.onrender.com/quizzes/${id}`);
+        const res = await fetch(`${API_BASE_URL}/quizzes/${id}`);
         const data = await res.json();
         // Pass the data to the parent handler
         if (onRetake) {
@@ -56,9 +60,13 @@ function PastQuizzes({ onRetake }) {
                         <div className="quiz-card" key={q.id}>
                             <h4>{q.title}</h4>
                             <div className="quiz-topic">
-                                <a href={q.url} target="_blank" rel="noopener noreferrer">
-                                    {q.url.length > 40 ? q.url.substring(0, 37) + "..." : q.url}
-                                </a>
+                                {q.url ? (
+                                    <a href={q.url} target="_blank" rel="noopener noreferrer">
+                                        {q.url.length > 40 ? q.url.substring(0, 37) + "..." : q.url}
+                                    </a>
+                                ) : (
+                                    <span>No URL available</span>
+                                )}
                             </div>
 
                             <div className="quiz-info">
