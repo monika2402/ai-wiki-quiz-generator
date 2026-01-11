@@ -8,7 +8,7 @@ function PastQuizzes({ onRetake }) {
 
     useEffect(() => {
         setLoading(true);
-        fetch("http://127.0.0.1:8000/quizzes")
+        fetch("https://ai-wiki-quiz-generator-so6x.onrender.com/quizzes")
             .then((res) => res.json())
             .then((data) => {
                 setQuizzes(data);
@@ -20,14 +20,14 @@ function PastQuizzes({ onRetake }) {
     }, []);
 
     const openDetails = async (id) => {
-        const res = await fetch(`http://127.0.0.1:8000/quizzes/${id}`);
+        const res = await fetch(`https://ai-wiki-quiz-generator-so6x.onrender.com/quizzes/${id}`);
         const data = await res.json();
         setSelected(data);
     };
 
     const handleRetake = async (id) => {
         // Fetch the full quiz details to retake
-        const res = await fetch(`http://127.0.0.1:8000/quizzes/${id}`);
+        const res = await fetch(`https://ai-wiki-quiz-generator-so6x.onrender.com/quizzes/${id}`);
         const data = await res.json();
         // Pass the data to the parent handler
         if (onRetake) {

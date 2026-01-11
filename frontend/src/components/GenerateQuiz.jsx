@@ -56,7 +56,7 @@ function GenerateQuiz({ initialData, onReset }) {
 
         try {
             const res = await fetch(
-                `http://127.0.0.1:8000/generate-quiz?url=${encodeURIComponent(url)}`,
+                `https://ai-wiki-quiz-generator-so6x.onrender.com/generate-quiz?url=${encodeURIComponent(url)}`,
                 { method: "POST" }
             );
             const data = await res.json();
@@ -82,7 +82,7 @@ function GenerateQuiz({ initialData, onReset }) {
     const saveScore = async (finalScore) => {
         if (!result || !result.id) return;
         try {
-            await fetch(`http://127.0.0.1:8000/quizzes/${result.id}/score`, {
+            await fetch(`https://ai-wiki-quiz-generator-so6x.onrender.com/quizzes/${result.id}/score`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ score: finalScore })
