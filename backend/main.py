@@ -19,14 +19,14 @@ load_dotenv()
 app = FastAPI()
 
 # -----------------------------------
-# ✅ CORS (FIXED FOR VERCEL + LOCAL)
+# ✅ CORS (LOCAL + VERCEL + FUTURE SAFE)
 # -----------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "https://ai-wiki-quiz-generator-nine.vercel.app"
+        "https://ai-wiki-quiz-generator-nine.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -44,7 +44,7 @@ def get_db():
         db.close()
 
 # -----------------------------------
-# Helper: Validate Wikipedia URL
+# Validate Wikipedia URL
 # -----------------------------------
 def is_valid_wikipedia_url(url: str) -> bool:
     try:
@@ -58,30 +58,26 @@ def is_valid_wikipedia_url(url: str) -> bool:
         return False
 
 # -----------------------------------
-# Helper: Scrape Wikipedia Page
+# Scrape Wikipedia Page
 # -----------------------------------
 def scrape_wikipedia_page(url: str):
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
-
+    headers = {"User-Agent": "Mozilla/5.0"}
     response = requests.get(url, headers=headers, timeout=10)
+
     if response.status_code != 200:
         raise HTTPException(status_code=400, detail="Failed to fetch Wikipedia page")
 
     soup = BeautifulSoup(response.text, "lxml")
 
-    # Title
-    title = soup.find("h1").get_text(strip=True)
+    title_tag = soup.find("h1")
+    title = title_tag.get_text(strip=True) if title_tag else "Unknown Title"
 
-    # Summary
     summary = ""
     for p in soup.select("div#mw-content-text p"):
         if p.get_text(strip=True):
             summary = p.get_text(strip=True)
             break
 
-    # Sections
     sections = []
     for h in soup.find_all(["h2", "h3"]):
         span = h.find("span", class_="mw-headline")
@@ -89,16 +85,17 @@ def scrape_wikipedia_page(url: str):
         if text.lower() not in ["references", "external links", "see also", "contents"]:
             sections.append(text)
 
-    # Full text
     content_div = soup.find("div", id="mw-content-text")
-    paragraphs = content_div.find_all("p")
-    text_content = " ".join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
+    paragraphs = content_div.find_all("p") if content_div else []
+    text_content = " ".join(
+        p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True)
+    )
 
     return {
         "title": title,
         "summary": summary,
         "sections": sections,
-        "text": text_content
+        "text": text_content,
     }
 
 # -----------------------------------
@@ -166,19 +163,23 @@ def generate_quiz_with_llm(prompt: str):
     llm = ChatGroq(
         api_key=api_key,
         model="llama-3.1-8b-instant",
-        temperature=0.3
+        temperature=0.3,
     )
 
     response = llm.invoke(prompt)
+
+    if not response or not response.content:
+        raise HTTPException(status_code=500, detail="Empty response from LLM")
+
     return response.content
 
 # -----------------------------------
-# JSON Cleaner
+# JSON Cleaner (SAFE)
 # -----------------------------------
 def extract_json(text: str):
     try:
-        start = text.index("{")
-        end = text.rindex("}") + 1
+        start = text.find("{")
+        end = text.rfind("}") + 1
         return json.loads(text[start:end])
     except:
         raise HTTPException(status_code=500, detail="Invalid JSON from LLM")
@@ -198,7 +199,6 @@ def generate_quiz(url: str, db: Session = Depends(get_db)):
     if not is_valid_wikipedia_url(url):
         raise HTTPException(status_code=400, detail="Invalid Wikipedia URL")
 
-    # Cache check
     existing = db.query(Quiz).filter(Quiz.url == url).first()
     if existing:
         return {
@@ -208,15 +208,16 @@ def generate_quiz(url: str, db: Session = Depends(get_db)):
             "summary": existing.summary,
             "sections": json.loads(existing.sections),
             "quiz": json.loads(existing.quiz_data),
-            "related_topics": json.loads(existing.related_topics)
+            "related_topics": json.loads(existing.related_topics),
         }
 
     scraped = scrape_wikipedia_page(url)
+
     prompt = build_quiz_prompt(
         scraped["title"],
         scraped["summary"],
         scraped["sections"],
-        scraped["text"]
+        scraped["text"],
     )
 
     ai_response = generate_quiz_with_llm(prompt)
@@ -227,8 +228,8 @@ def generate_quiz(url: str, db: Session = Depends(get_db)):
         title=scraped["title"],
         summary=scraped["summary"],
         sections=json.dumps(scraped["sections"]),
-        quiz_data=json.dumps(quiz_data["quiz"]),
-        related_topics=json.dumps(quiz_data["related_topics"])
+        quiz_data=json.dumps(quiz_data.get("quiz", [])),
+        related_topics=json.dumps(quiz_data.get("related_topics", [])),
     )
 
     db.add(new_quiz)
@@ -242,7 +243,7 @@ def generate_quiz(url: str, db: Session = Depends(get_db)):
         "summary": new_quiz.summary,
         "sections": scraped["sections"],
         "quiz": quiz_data["quiz"],
-        "related_topics": quiz_data["related_topics"]
+        "related_topics": quiz_data["related_topics"],
     }
 
 # -----------------------------------
@@ -257,7 +258,7 @@ def get_quizzes(db: Session = Depends(get_db)):
             "title": q.title,
             "created_at": q.created_at,
             "last_score": q.last_score,
-            "high_score": q.high_score
+            "high_score": q.high_score,
         }
         for q in quizzes
     ]
@@ -281,7 +282,7 @@ def get_quiz(quiz_id: int, db: Session = Depends(get_db)):
         "related_topics": json.loads(quiz.related_topics),
         "created_at": quiz.created_at,
         "last_score": quiz.last_score,
-        "high_score": quiz.high_score
+        "high_score": quiz.high_score,
     }
 
 # -----------------------------------
@@ -303,5 +304,5 @@ def update_score(quiz_id: int, data: ScoreUpdate, db: Session = Depends(get_db))
     return {
         "message": "Score updated",
         "last_score": quiz.last_score,
-        "high_score": quiz.high_score
+        "high_score": quiz.high_score,
     }
